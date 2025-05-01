@@ -49,8 +49,20 @@ def fetch_financialjuice_feed():
         'api_key': RSS2JSON_API_KEY,  # Ganti dengan API key kamu jika perlu
         'order_by': 'pubDate',  # Mengurutkan berdasarkan waktu publikasi
         'order_dir': 'desc',  # Urutan descending
-        'count': 30  # Ambil 30 berita terbaru
+        'count': 50  # Ambil 50 berita terbaru
     }
+    
+    # Keywords for filtering
+    relevant_keywords = [
+        "fed", "fomc", "ecb", "boe", "boj", "interest rate", "rate hike", "rate cut", "tightening", "easing", 
+        "hawkish", "dovish", "pivot", "central bank",
+        "cpi", "ppi", "gdp", "nfp", "unemployment", "payroll", "jobless claims", "pce", "core inflation",
+        "retail sales", "consumer confidence", "housing starts", "ism", "pmi", "manufacturing",
+        "liquidity", "risk", "risk-off", "risk-on", "recession", "credit", "default", "banking crisis",
+        "china", "taiwan", "trump", "biden", "tariffs", "trade war", "regulation", "crypto regulation", "sec", "lawsuit",
+        "bond yields", "dollar index", "usd", "vix", "volatility", "tech stocks", "equities",
+        "bitcoin", "ethereum", "crypto", "cryptocurrency", "etf", "spot etf", "blackrock", "sec approval", "coinbase", "binance"
+    ]
 
     try:
         # Mengambil data dari API
@@ -65,15 +77,17 @@ def fetch_financialjuice_feed():
             logger.error(f"FinancialJuice API status returned an error: {data.get('message', 'Unknown error')}")
             return None
 
-        # Ambil daftar berita dari JSON
-        all_feed = []
+        # Ambil dan filter berdasarkan keyword relevan
+        filtered_feed = []
         for item in data.get('items', []):
-            all_feed.append({
-                'title': item.get('title'),
-                'published': item.get('pubDate')
-            })
-        
-        return all_feed
+            title = item.get('title', '')
+            if any(keyword.lower() in title.lower() for keyword in relevant_keywords):
+                filtered_feed.append({
+                    'title': title.replace("FinancialJuice: ", "").strip(),
+                    'published': item.get('pubDate')
+                })
+
+        return filtered_feed
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch data from FinancialJuice: {e}")
