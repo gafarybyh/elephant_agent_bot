@@ -1,7 +1,10 @@
 import requests
 from flask import Flask, request, Response
-from helpers.analysis import analyze_data_sector, split_text, analyze_data_macro
-from helpers.api_helpers import save_id_to_google_sheets
+from analysis.sector import analyze_sector
+from analysis.macro import analyze_macro_news
+from helpers.api_helpers import (
+    save_id_to_google_sheets, reply_message_tg, delete_message_tg
+)
 from config.app_config import (
     logger, TELEGRAM_BOT_TOKEN, WEBHOOK_URL,
     WELCOME_MESSAGE, HELP_MESSAGE, TOKEN_MESSAGE, INFO_MESSAGE,
@@ -11,7 +14,8 @@ from config.app_config import (
 # Create Flask app
 app = Flask(__name__)
 
-# Webhook route
+
+# *WEBHOOK ROUTE
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
@@ -21,21 +25,22 @@ def webhook():
 
         # Extract basic information from the update
         if 'message' in update_json:
+            
+            # Get the chat ID
             chat_id = update_json['message']['chat']['id']
 
-            # If it's a text message, log the text
+            # If it's a text message
             if 'text' in update_json['message']:
                 text = update_json['message']['text']
                 logger.info(f"Received message from {chat_id}: {text}")
 
-                # Use requests to send a reply
-                token = TELEGRAM_BOT_TOKEN
-                api_url = f"https://api.telegram.org/bot{token}/sendMessage"
-
+    
                 # Handle commands
-                # *START COMMAND
+                # TODO* START COMMAND
                 if text.startswith('/start'):
                     reply_text = WELCOME_MESSAGE
+                    
+                    reply_message_tg(chat_id, reply_text)
 
                     # Save user ID to Google Sheets when using webhook
                     try:
@@ -58,84 +63,58 @@ def webhook():
                 elif text.startswith('/token'):
                     reply_text = TOKEN_MESSAGE
                 
-                # *SECTOR COMMAND
+                # TODO* SECTOR COMMAND
                 elif text.startswith('/sector'):
                     reply_text = "Analyzing..."
-                    # Send initial response
-                    requests.post(api_url, json={
-                        'chat_id': chat_id,
-                        'text': reply_text
-                    })
+                    # Send initial response and return message_id
+                    msg_id = reply_message_tg(chat_id, reply_text)
 
                     # Remove the "/sector" prefix from the user message
                     clean_query_sector = text.replace("/sector", "", 1).strip()
 
-                    # Then analyze and send results
-                    try:
-                        sector_analysis_result = analyze_data_sector(clean_query_sector)
-                        text_chunks = split_text(sector_analysis_result)
-                        # *CHUNK TEXT TO MAKE IT FIT TO TELEGRAM MESSAGE
-                        for chunk in text_chunks:
-                            requests.post(api_url, json={
-                                'chat_id': chat_id,
-                                'text': chunk
-                            })
-                        return Response('OK', status=200)
-                    except Exception as e:
-                        logger.error(f"Error analyzing sector: {e}")
-                        requests.post(api_url, json={
-                            'chat_id': chat_id,
-                            'text': "Error occurred while processing request. Try again later."
-                        })
-                        return Response('OK', status=200)
+                    # Then analyze sector
+                    sector_analysis_result = analyze_sector(clean_query_sector)
+                        
+                    if msg_id is not None:
+                        # Delete the initial response
+                        delete_message_tg(chat_id, msg_id)
                     
-                # *MACRO COMMAND
+                    # Reply the analysis result 
+                    reply_message_tg(chat_id, sector_analysis_result)
+                        
+                    
+                # TODO* MACRO COMMAND
                 elif text.startswith('/macro'):
                     reply_text = "Analyzing..."
-                    # Send initial response
-                    requests.post(api_url, json={
-                        'chat_id': chat_id,
-                        'text': reply_text
-                    })
+                    # Send initial response return message_id
+                    msg_id = reply_message_tg(chat_id, reply_text)
                     
                     # Remove the "/macro" prefix from the user message
                     clean_query_macro = text.replace("/macro", "", 1).strip()
                     
-                    # Then analyze and send results
-                    try:
-                        macro_analysis_result = analyze_data_macro(clean_query_macro)
-                        
-                        # *CHUNK TEXT TO MAKE IT FIT TO TELEGRAM MESSAGE
-                        text_chunks = split_text(macro_analysis_result)
-                        for chunk in text_chunks:
-                            requests.post(api_url, json={
-                                'chat_id': chat_id,
-                                'text': chunk
-                            })
-                        return Response('OK', status=200)
-                    except Exception as e:
-                        logger.error(f"Error analyzing macro: {e}")
-                        requests.post(api_url, json={
-                            'chat_id': chat_id,
-                            'text': "Error occurred while processing request. Try again later."
-                        })
-                        return Response('OK', status=200)
+                    # Then analyze Macro News
+                    macro_analysis_result = analyze_macro_news(clean_query_macro)
+                    
+                    if msg_id is not None:
+                        # Delete the initial response
+                        delete_message_tg(chat_id, msg_id)
+                    
+                    # Reply the analysis result  
+                    reply_message_tg(chat_id, macro_analysis_result)
+                
                 else:
                     reply_text = "I received your message. Use /help to see available commands."
 
-                # Send the reply
-                requests.post(api_url, json={
-                    'chat_id': chat_id,
-                    'text': reply_text
-                })
+                    reply_message_tg(chat_id, reply_text)
 
-        logger.info("Update processed successfully")
+
+        logger.info("Telegram message sent successfully")
         return Response('OK', status=200)
     except Exception as e:
-        logger.error(f"Error processing update: {e}")
+        logger.error(f"Error processing update webhook: {e}")
         return Response('OK', status=200)  # Still return 200 to avoid Telegram retries
 
-# Set webhook
+# TODO* SET WEBHOOK
 @app.route('/set_webhook', methods=['GET'])
 def set_webhook():
     try:

@@ -1,6 +1,6 @@
 import os
 import logging
-from config.logging_setup import logging_config
+from config.logging_config import logging_config
 from dotenv import load_dotenv
 
 # Load variabel dari file .env

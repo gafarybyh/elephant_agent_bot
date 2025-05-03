@@ -1,6 +1,6 @@
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-LOG_PATH = "/home/gafarybyh/elephant_agent_bot/logs/app.log"
+LOG_PATH = "/elephant_agent_bot/logs/app.log"
 
 logging_config = {
     "version": 1,
@@ -32,7 +32,7 @@ logging_config = {
         
         # 🔧 Limit log from external library
         # Level (DEBUG 10, INFO 20, WARNING 30, ERROR 40, CRITICAL 50)	
-        "telegram": {"level": "INFO", "propagate": False}, # Only INFO until CRITICAL
+        "telegram": {"level": "INFO", "propagate": False}, # Only INFO until CRITICAL level on telegram library
     }
 }
 

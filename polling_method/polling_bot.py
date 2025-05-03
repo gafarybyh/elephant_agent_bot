@@ -1,7 +1,8 @@
 import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
-from helpers.analysis import analyze_data_sector, split_text, analyze_data_macro
+from analysis.macro import analyze_macro_news
+from analysis.sector import analyze_sector
 from helpers.api_helpers import save_id_to_google_sheets
 from config.app_config import (
     logger, TELEGRAM_BOT_TOKEN, MINI_APP_URL, WELCOME_IMAGE_PATH,
@@ -53,10 +54,9 @@ async def handle_analyze(update: Update, context: CallbackContext):
             # Remove the "/sector" prefix from the user message
             clean_query = user_message.replace("/sector", "", 1).strip()
 
-            analysis_result = analyze_data_sector(clean_query)
-            text_chunks = split_text(analysis_result)
-            for chunk in text_chunks:
-                await update.message.reply_text(chunk)
+            analysis_result = analyze_sector(clean_query)
+            
+            await update.message.reply_text(analysis_result)
         
         elif "/macro" in user_message:
             await update.message.reply_text("Analyzing...")
@@ -64,10 +64,9 @@ async def handle_analyze(update: Update, context: CallbackContext):
             # Remove the "/macro" prefix from the user message
             clean_query = user_message.replace("/macro", "", 1).strip()
             
-            analysis_result = analyze_data_macro(clean_query)
-            text_chunks = split_text(analysis_result)
-            for chunk in text_chunks:
-                await update.message.reply_text(chunk)
+            analysis_result = analyze_macro_news(clean_query)
+            
+            await update.message.reply_text(analysis_result)
 
     except Exception as e:
         logger.error(f"Error while handling message: {e}")
@@ -98,7 +97,6 @@ def setup_handlers():
     bot.add_handler(CommandHandler("start", start))
     bot.add_handler(CommandHandler("sector", handle_analyze))
     bot.add_handler(CommandHandler("token", token))
-    bot.add_handler(CommandHandler("macro", macro))
     bot.add_handler(CommandHandler("help", help))
     bot.add_handler(CommandHandler("info", info))
     bot.add_handler(CommandHandler("contact", contact))

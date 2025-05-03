@@ -4,7 +4,8 @@ from datetime import datetime
 import google.generativeai as genai
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from config.app_config import (logger, RSS2JSON_API_KEY, SHEET_URL_SECTOR, SHEET_URL_TOKEN, GEMINI_API_KEY, GOOGLE_CREDENTIALS)
+from helpers.utils import split_text
+from config.app_config import (logger, RSS2JSON_API_KEY, SHEET_URL_SECTOR, SHEET_URL_TOKEN, GEMINI_API_KEY, GOOGLE_CREDENTIALS, TELEGRAM_BOT_TOKEN)
 
 
 # TODO* FETCH DATA SECTOR
@@ -15,14 +16,14 @@ def fetch_data_sector():
         
         # Periksa apakah response JSON yang diterima sesuai format yang diharapkan
         try:
-            data = response.json()
+            sectors = response.json()
             # Bisa tambahkan pengecekan apakah key 'values' ada di dalam data
-            if 'values' not in data:
-                raise ValueError("Missing 'values' in the response data")
+            if 'values' not in sectors:
+                raise ValueError("Missing 'values' in the SECTOR response data")
             
-            return data
+            return sectors
         except ValueError as ve:
-            logger.error(f"Invalid JSON or missing expected key in response: {ve}")
+            logger.error(f"Invalid JSON or missing expected key in SECTOR response: {ve}")
             return None
         
     except requests.exceptions.RequestException as e:
@@ -31,17 +32,42 @@ def fetch_data_sector():
 
 # TODO* FETCH DATA TOKEN
 def fetch_data_token():
-
     try:
         response = requests.get(SHEET_URL_TOKEN)
         response.raise_for_status()
-        return response.json()
+        try:
+            tokens = response.json()
+            
+            if 'values' not in tokens:
+                raise ValueError("Missing 'values' in the TOKEN response data")
+            
+            return tokens
+        except ValueError as ve:
+            logger.error(f"Invalid JSON or missing expected key in TOKEN response: {ve}")
+            return None
+        
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch data from API Token: {e}")
-        return "Failed to fetch data from API Token"
+        return None
+    
+# TODO* FETCH CALENDAR ECONOMY
+def fetch_calendar_economy():
+    url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Akan raise error kalau status bukan 200 OK
+        
+        calendar_data = response.json()  # Parse JSON dari respons
+        return calendar_data
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error: Failed to fetch data from Calendar Economy: {e}")
+        return None
+    except ValueError as e:
+        logger.error(f"Error: Failed to parse JSON: {e}")
+        return None
     
 # TODO* FETCH FINANCIALJUICE FEED
-def fetch_financialjuice_feed():
+def fetch_financialjuice_feed(limit: int = 50):
     # URL untuk mendapatkan feed dari RSS2JSON API
     url = 'https://api.rss2json.com/v1/api.json'
     params = {
@@ -49,46 +75,23 @@ def fetch_financialjuice_feed():
         'api_key': RSS2JSON_API_KEY,  # Ganti dengan API key kamu jika perlu
         'order_by': 'pubDate',  # Mengurutkan berdasarkan waktu publikasi
         'order_dir': 'desc',  # Urutan descending
-        'count': 50  # Ambil 50 berita terbaru
+        'count': limit  # Ambil 50 berita terbaru
     }
     
-    # Keywords for filtering
-    relevant_keywords = [
-        "fed", "fomc", "ecb", "boe", "boj", "interest rate", "rate hike", "rate cut", "tightening", "easing", 
-        "hawkish", "dovish", "pivot", "central bank",
-        "cpi", "ppi", "gdp", "nfp", "unemployment", "payroll", "jobless claims", "pce", "core inflation",
-        "retail sales", "consumer confidence", "housing starts", "ism", "pmi", "manufacturing",
-        "liquidity", "risk", "risk-off", "risk-on", "recession", "credit", "default", "banking crisis",
-        "china", "taiwan", "trump", "biden", "tariffs", "trade war", "regulation", "crypto regulation", "sec", "lawsuit",
-        "bond yields", "dollar index", "usd", "vix", "volatility", "tech stocks", "equities",
-        "bitcoin", "ethereum", "crypto", "cryptocurrency", "etf", "spot etf", "blackrock", "sec approval", "coinbase", "binance"
-    ]
-
     try:
         # Mengambil data dari API
         response = requests.get(url, params=params)
         response.raise_for_status()  # Mengecek apakah ada error HTTP (misalnya 404, 500)
 
         # Mengambil data JSON dari response
-        data = response.json()
+        feed = response.json()
 
         # Memastikan data valid
-        if data.get('status') != 'ok':
-            logger.error(f"FinancialJuice API status returned an error: {data.get('message', 'Unknown error')}")
+        if feed.get('status') != 'ok':
+            logger.error(f"FinancialJuice API status returned an error: {feed.get('message', 'Unknown error')}")
             return None
 
-        # Ambil dan filter berdasarkan keyword relevan
-        filtered_feed = []
-        for item in data.get('items', []):
-            title = item.get('title', '')
-            if any(keyword.lower() in title.lower() for keyword in relevant_keywords):
-                filtered_feed.append({
-                    'title': title.replace("FinancialJuice: ", "").strip(),
-                    'published': item.get('pubDate')
-                })
-
-        return filtered_feed
-
+        return feed
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch data from FinancialJuice: {e}")
         return None
@@ -96,6 +99,51 @@ def fetch_financialjuice_feed():
         logger.error(f"Unexpected error while processing FinancialJuice feed: {e}")
         return None
 
+# TODO* REPLY MESSAGE TELEGRAM
+def reply_message_tg(chat_id: int, text: str):
+    """
+    Bot reply telegram message
+    
+    Args:
+        chat_id (int): Chat ID to send message
+        text (str): Message to send
+    Returns:
+        message_id (int): Message ID
+    
+    """
+    token = TELEGRAM_BOT_TOKEN 
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    
+    # if text is too long, split it
+    text_chunks = split_text(text)
+    
+    try:
+        for chunk in text_chunks:
+            request = requests.post(url, json={
+                "chat_id": chat_id,
+                "text": chunk,
+                "parse_mode": "Markdown"
+            })
+            response = request.json()
+            message_id = response['result']['message_id']
+            return message_id
+        
+    except Exception as e:
+        logger.error(f"Error while POST a telegram message: {e}")
+
+# TODO* DELETE MESSAGE TELEGRAM
+def delete_message_tg(chat_id: int, message_id: int):
+    token = TELEGRAM_BOT_TOKEN 
+    url = f"https://api.telegram.org/bot{token}/deleteMessage"
+    data = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+    }
+    try:
+        response_data = requests.post(url, json=data)
+        return response_data.json()
+    except Exception as e:
+        logger.error(f"Error while DELETE a telegram message: {e}")
 
 # TODO* FETCH GEMINI API
 def get_gemini_response(prompt):
