@@ -6,22 +6,31 @@ from config.app_config import logger
 # TODO* CLASSIFY AND FORMAT NEWS
 def classify_and_format_news(feed):
     us_keywords = [
-        "fed", "fomc", "pce", "cpi", "ppi", "core inflation", "rate hike", "rate cut",
-        "dot plot", "tightening", "easing", "nfp", "nonfarm", "jobless claims",
-        "payroll", "unemployment", "treasury", "bond yields", "dollar", "usd",
-        "retail sales", "consumer confidence", "ism", "pmi", "gdp", "financial conditions"
+    "fed", "fomc", "pce", "cpi", "ppi", "core inflation", "rate hike", "rate cut",
+    "dot plot", "tightening", "easing", "nfp", "nonfarm", "jobless claims", "jolts",
+    "payroll", "unemployment", "employment", "labor market",
+    "treasury", "yellen", "bessent", "fiscal", "bond yields", "yields", "bonds",
+    "dollar", "usd", "bank supervision", "bank regulation", "stress test",
+    "retail sales", "consumer confidence", "ism", "pmi", "gdp", "gdi",
+    "financial conditions", "cost index", "ecb watch", "personal spending"
     ]
+
+
 
     china_keywords = [
-        "china", "pboe", "pboc", "xi jinping", "stimulus", "property crisis",
-        "real estate", "liquidity", "yuan", "shadow banking", "evergrande"
+    "china", "pboe", "pboc", "xi jinping", "stimulus", "property crisis",
+    "real estate", "liquidity", "yuan", "shadow banking", "evergrande",
+    "beijing", "chinese economy", "local government debt", "soes"
     ]
 
+
     global_keywords = [
-        "ecb", "europe", "eurozone", "germany", "france", "inflation",
-        "rate hike", "rate cut", "ukraine", "russia", "geopolitical",
-        "oil", "saudi", "middle east", "israel", "iran", "boj", "japan", "boe", "uk"
+    "ecb", "europe", "eurozone", "germany", "france", "inflation", "disinflation",
+    "rate hike", "rate cut", "boe", "boj", "uk", "japan", "kuroda", "geopolitical",
+    "ukraine", "russia", "nato", "israel", "iran", "middle east", "saudi", "opec", "oil",
+    "gulf summit", "supply shock", "crude", "energy prices", "conflict", "tensions"
     ]
+
 
      # Compile regex patterns for each category
     def build_pattern(keywords):
@@ -34,7 +43,7 @@ def classify_and_format_news(feed):
     us_news, china_news, global_news = [], [], []
 
     for item in feed.get('items', []):  # Access 'items' key safely
-        title = item.get('title', '')
+        title = item.get('title', '').removeprefix('FinancialJuice: ').strip()
         published = item.get('pubDate', '')  # Use 'pubDate' which is the correct key in RSS feed
         formatted_title = f"• {title} ({published})"
 
@@ -52,13 +61,18 @@ def classify_and_format_news(feed):
 def generate_macro_prompt(us_news: list = None, china_news: list = None, global_news: list = None, calendar_news: list = None, user_question="How does this impact crypto today?"):
     """Generate a prompt for the Gemini model to analyze macro news."""
     # Join the news data with newlines outside the f-string to avoid backslash issues
-    us_news_text = "\n".join(us_news[:5]) if us_news else "• None"
-    china_news_text = "\n".join(china_news[:3]) if china_news else "• None"
-    global_news_text = "\n".join(global_news[:3]) if global_news else "• None"
+    us_news_text = "\n".join(us_news[:10]) if us_news else "• None"
+    china_news_text = "\n".join(china_news[:10]) if china_news else "• None"
+    global_news_text = "\n".join(global_news[:10]) if global_news else "• None"
     calendar_news_text = "\n".join(calendar_news[:10]) if calendar_news else "• None"
+    
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     return f"""
 You are a professional macroeconomic analyst specializing in cryptocurrency, gold, and high-risk assets. Generate a concise macro outlook for active traders based on the following headlines.
+
+User Question: {user_question}
+Current Time: {current_time}
 
 US News:
 {us_news_text}
@@ -71,8 +85,6 @@ Global News:
 
 Calendar Economy:
 {calendar_news_text}
-
-User Question: {user_question}
 
 Rules:
     - Prioritize categories: central bank policy (Fed, ECB, etc), inflation (CPI, PPI), labor market (NFP, unemployment), GDP, liquidity shifts, financial conditions, geopolitical tensions
@@ -90,6 +102,7 @@ Respond using this format (max 15 lines):
     • 🇺🇸 US: [Most relevant US headline(s)]
     • 🇨🇳 China: [Most relevant China headline(s)]
     • 🌐 Global: [Most relevant global headline(s)]
+    • 📊 Calendar: [Analysis of upcoming economic events or past events]
 
     💡 Summary:
     [Short and direct summary of how these events affect crypto, gold, or general risk assets]
@@ -101,6 +114,8 @@ Respond using this format (max 15 lines):
     📉 *Dovish/Hawkish Scale:* [X/10] → [Impact on crypto] (0 = Extremely Dovish, 10 = Extremely Hawkish)
 
     🎯 Action: [Risk On / Risk Off] → [Tactical trading idea]
+    
+Respond only with the formatted analysis or the fallback message. No extra commentary.
 """
 
 # TODO* FILTER CALENDAR ECONOMY DATA
