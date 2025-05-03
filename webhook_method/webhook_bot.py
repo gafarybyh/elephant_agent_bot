@@ -25,7 +25,7 @@ def webhook():
 
         # Extract basic information from the update
         if 'message' in update_json:
-            
+
             # Get the chat ID
             chat_id = update_json['message']['chat']['id']
 
@@ -34,12 +34,12 @@ def webhook():
                 text = update_json['message']['text']
                 logger.info(f"Received message from {chat_id}: {text}")
 
-    
+
                 # Handle commands
                 # TODO* START COMMAND
                 if text.startswith('/start'):
                     reply_text = WELCOME_MESSAGE
-                    
+
                     reply_message_tg(chat_id, reply_text)
 
                     # Save user ID to Google Sheets when using webhook
@@ -53,16 +53,20 @@ def webhook():
                 # *HELP COMMAND
                 elif text.startswith('/help'):
                     reply_text = HELP_MESSAGE
+                    reply_message_tg(chat_id, reply_text)
                 # *INFO COMMAND
                 elif text.startswith('/info'):
                     reply_text = INFO_MESSAGE
+                    reply_message_tg(chat_id, reply_text)
                 # *CONTACT COMMAND
                 elif text.startswith('/contact'):
                     reply_text = CONTACT_MESSAGE
+                    reply_message_tg(chat_id, reply_text)
                 # *TOKEN COMMAND
                 elif text.startswith('/token'):
                     reply_text = TOKEN_MESSAGE
-                
+                    reply_message_tg(chat_id, reply_text)
+
                 # TODO* SECTOR COMMAND
                 elif text.startswith('/sector'):
                     reply_text = "Analyzing..."
@@ -74,39 +78,36 @@ def webhook():
 
                     # Then analyze sector
                     sector_analysis_result = analyze_sector(clean_query_sector)
-                        
+
+                    # Reply the analysis result
+                    reply_message_tg(chat_id, sector_analysis_result)
+
                     if msg_id is not None:
                         # Delete the initial response
                         delete_message_tg(chat_id, msg_id)
-                    
-                    # Reply the analysis result 
-                    reply_message_tg(chat_id, sector_analysis_result)
-                        
-                    
+
                 # TODO* MACRO COMMAND
                 elif text.startswith('/macro'):
                     reply_text = "Analyzing..."
-                    # Send initial response return message_id
+                    # Send initial response and return message_id
                     msg_id = reply_message_tg(chat_id, reply_text)
-                    
+
                     # Remove the "/macro" prefix from the user message
                     clean_query_macro = text.replace("/macro", "", 1).strip()
-                    
+
                     # Then analyze Macro News
                     macro_analysis_result = analyze_macro_news(clean_query_macro)
-                    
+
                     if msg_id is not None:
                         # Delete the initial response
                         delete_message_tg(chat_id, msg_id)
-                    
-                    # Reply the analysis result  
+
+                    # Reply the analysis result
                     reply_message_tg(chat_id, macro_analysis_result)
-                
+
                 else:
                     reply_text = "I received your message. Use /help to see available commands."
-
                     reply_message_tg(chat_id, reply_text)
-
 
         logger.info("Telegram message sent successfully")
         return Response('OK', status=200)
@@ -146,4 +147,4 @@ def start_webhook(host='0.0.0.0', port=5000, debug=False):
     app.run(host=host, port=port, debug=debug)
 
 if __name__ == "__main__":
-    start_webhook(debug=True) 
+    start_webhook(debug=True)

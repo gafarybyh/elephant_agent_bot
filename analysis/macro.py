@@ -1,27 +1,28 @@
 from helpers.api_helpers import fetch_financialjuice_feed, get_gemini_response, fetch_calendar_economy
 from datetime import datetime
 import re
+from config.app_config import logger
 
 # TODO* CLASSIFY AND FORMAT NEWS
 def classify_and_format_news(feed):
     us_keywords = [
-        "fed", "fomc", "pce", "cpi", "ppi", "core inflation", "rate hike", "rate cut", 
-        "dot plot", "tightening", "easing", "nfp", "nonfarm", "jobless claims", 
-        "payroll", "unemployment", "treasury", "bond yields", "dollar", "usd", 
+        "fed", "fomc", "pce", "cpi", "ppi", "core inflation", "rate hike", "rate cut",
+        "dot plot", "tightening", "easing", "nfp", "nonfarm", "jobless claims",
+        "payroll", "unemployment", "treasury", "bond yields", "dollar", "usd",
         "retail sales", "consumer confidence", "ism", "pmi", "gdp", "financial conditions"
     ]
 
     china_keywords = [
-        "china", "pboe", "pboc", "xi jinping", "stimulus", "property crisis", 
+        "china", "pboe", "pboc", "xi jinping", "stimulus", "property crisis",
         "real estate", "liquidity", "yuan", "shadow banking", "evergrande"
     ]
 
     global_keywords = [
-        "ecb", "europe", "eurozone", "germany", "france", "inflation", 
-        "rate hike", "rate cut", "ukraine", "russia", "geopolitical", 
+        "ecb", "europe", "eurozone", "germany", "france", "inflation",
+        "rate hike", "rate cut", "ukraine", "russia", "geopolitical",
         "oil", "saudi", "middle east", "israel", "iran", "boj", "japan", "boe", "uk"
     ]
-    
+
      # Compile regex patterns for each category
     def build_pattern(keywords):
         return re.compile(r'\b(' + '|'.join(map(re.escape, keywords)) + r')\b', re.IGNORECASE)
@@ -32,9 +33,9 @@ def classify_and_format_news(feed):
 
     us_news, china_news, global_news = [], [], []
 
-    for item in feed:
+    for item in feed.get('items', []):  # Access 'items' key safely
         title = item.get('title', '')
-        published = item.get('published', '')
+        published = item.get('pubDate', '')  # Use 'pubDate' which is the correct key in RSS feed
         formatted_title = f"• {title} ({published})"
 
         if us_pattern.search(title):
@@ -49,20 +50,27 @@ def classify_and_format_news(feed):
 
 # TODO* GENERATE MACRO PROMPT
 def generate_macro_prompt(us_news: list = None, china_news: list = None, global_news: list = None, calendar_news: list = None, user_question="How does this impact crypto today?"):
+    """Generate a prompt for the Gemini model to analyze macro news."""
+    # Join the news data with newlines outside the f-string to avoid backslash issues
+    us_news_text = "\n".join(us_news[:5]) if us_news else "• None"
+    china_news_text = "\n".join(china_news[:3]) if china_news else "• None"
+    global_news_text = "\n".join(global_news[:3]) if global_news else "• None"
+    calendar_news_text = "\n".join(calendar_news[:10]) if calendar_news else "• None"
+
     return f"""
 You are a professional macroeconomic analyst specializing in cryptocurrency, gold, and high-risk assets. Generate a concise macro outlook for active traders based on the following headlines.
 
 US News:
-{"\n".join(us_news[:5]) or "• None"}
+{us_news_text}
 
 China News:
-{"\n".join(china_news[:3]) or "• None"}
+{china_news_text}
 
 Global News:
-{"\n".join(global_news[:3]) or "• None"}
+{global_news_text}
 
 Calendar Economy:
-{"\n".join(calendar_news[:10]) or "• None"}
+{calendar_news_text}
 
 User Question: {user_question}
 
@@ -98,55 +106,72 @@ Respond using this format (max 15 lines):
 # TODO* FILTER CALENDAR ECONOMY DATA
 def filtered_calendar_economy():
     calendar_data = fetch_calendar_economy()
-    
+
     if calendar_data is None:
         return "Error: Failed to fetch calendar economy data, try again later..."
-    
+
     # Filter: country = USD, impact = MEDIUM or HIGH
     filtered_data = [
         event for event in calendar_data
         if event.get('country') == 'USD' and event.get('impact') in ['Medium', 'High', 'All']
     ]
-    
+
     # Sort berdasarkan 'date' (format: "2025-05-01 13:30:00")
-    sorted_data = sorted(
-        filtered_data,
-        key=lambda x: datetime.strptime(x['date'], "%Y-%m-%d %H:%M:%S")
-    )
-    
+    def safe_date_key(event):
+        try:
+            date_str = event.get('date')
+            if date_str:
+                return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+            return datetime.min  # Default date for items without a date
+        except (ValueError, TypeError):
+            return datetime.min  # Default for invalid date formats
+
+    sorted_data = sorted(filtered_data, key=safe_date_key)
+
     calendar_news = []
-    
+
     for event in sorted_data:
-        title = event.get('title')
-        country = event.get('country')
-        date = event.get('date')
-        impact = event.get('impact')
-        forecast = event.get('forecast')
-        previous = event.get('previous')
-        
+        title = event.get('title', 'No Title')
+        country = event.get('country', 'Unknown')
+        date = event.get('date', 'No Date')
+        impact = event.get('impact', 'Unknown')
+        forecast = event.get('forecast', 'N/A')
+        previous = event.get('previous', 'N/A')
+
         calendar_info = f"• {title} ({date}) | Country: {country}, Impact: {impact}, Forecast: {forecast}, Prev: {previous}"
-        
+
         calendar_news.append(calendar_info)
-        
+
     return calendar_news
-    
+
 # TODO* ANALYZE MACRO NEWS
 def analyze_macro_news(user_query):
-    raw_news = fetch_financialjuice_feed()
-    
-    if raw_news is None:
-        return "Error: Failed to fetch news data, try again later..."
+    try:
+        raw_news = fetch_financialjuice_feed()
 
-    us_news, china_news, global_news = classify_and_format_news(raw_news)
-    
-    calendar_news = filtered_calendar_economy()
-    
-    if not isinstance(calendar_news, list):
-        return []
+        if raw_news is None:
+            return "Error: Failed to fetch news data, try again later..."
 
-    prompt = generate_macro_prompt(us_news, china_news, global_news, calendar_news, user_question=user_query)
-    
-    return get_gemini_response(prompt)
+        # Check if raw_news is a dictionary and has the expected structure
+        if not isinstance(raw_news, dict) or 'items' not in raw_news:
+            return "Error: Unexpected format from news feed, try again later..."
+
+        us_news, china_news, global_news = classify_and_format_news(raw_news)
+
+        calendar_news = filtered_calendar_economy()
+
+        # Check if calendar_news is an error message (string)
+        if isinstance(calendar_news, str):
+            # If it's an error message, we can still proceed with empty calendar data
+            logger.warning(f"Calendar data error: {calendar_news}. Proceeding with empty calendar data.")
+            calendar_news = []
+
+        prompt = generate_macro_prompt(us_news, china_news, global_news, calendar_news, user_question=user_query)
+
+        return get_gemini_response(prompt)
+    except Exception as e:
+        logger.error(f"Error in analyze_macro_news: {e}")
+        return f"Error analyzing macro news: {str(e)[:100]}... Please try again later."
 
 
 # Keywords for filtering
@@ -179,11 +204,11 @@ def analyze_macro_news(user_query):
 
 #     💡 Summary:
 #     [3-5 lines max about market impact]
-    
+
 #     ⚖️ Risk Factors:
 #     • Upside: [Key bullish catalyst]
 #     • Downside: [Key bearish risk]
-    
+
 #     📉 *Dovish/Hawkish Scale:* [X/10] → [Short impact on crypto market] (Scale: 0 = Extremely Dovish, 10 = Extremely Hawkish)
 
 #     ⚠️ Main Risk: [One key risk]
@@ -236,5 +261,5 @@ def analyze_macro_news(user_query):
 #     🧭 *Dovish/Hawkish Scale:* [X/10] → [Short-term crypto bias] (Scale: 0 = Extremely Dovish, 10 = Extremely Hawkish)
 
 #     🎯 *Positioning:* *[Risk-On / Risk-Off]* → [1 clear trading insight or asset allocation suggestion]
-    
+
 # """

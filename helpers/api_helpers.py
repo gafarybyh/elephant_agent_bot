@@ -13,19 +13,19 @@ def fetch_data_sector():
     try:
         response = requests.get(SHEET_URL_SECTOR)
         response.raise_for_status()  # Memastikan status OK (200)
-        
+
         # Periksa apakah response JSON yang diterima sesuai format yang diharapkan
         try:
             sectors = response.json()
             # Bisa tambahkan pengecekan apakah key 'values' ada di dalam data
             if 'values' not in sectors:
                 raise ValueError("Missing 'values' in the SECTOR response data")
-            
+
             return sectors
         except ValueError as ve:
             logger.error(f"Invalid JSON or missing expected key in SECTOR response: {ve}")
             return None
-        
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch data from API Sector: {e}")
         return None
@@ -37,26 +37,26 @@ def fetch_data_token():
         response.raise_for_status()
         try:
             tokens = response.json()
-            
+
             if 'values' not in tokens:
                 raise ValueError("Missing 'values' in the TOKEN response data")
-            
+
             return tokens
         except ValueError as ve:
             logger.error(f"Invalid JSON or missing expected key in TOKEN response: {ve}")
             return None
-        
+
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch data from API Token: {e}")
         return None
-    
+
 # TODO* FETCH CALENDAR ECONOMY
 def fetch_calendar_economy():
-    url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
+    url = "https://raynor-api.gafarybyh.workers.dev/calendar"
     try:
         response = requests.get(url)
         response.raise_for_status()  # Akan raise error kalau status bukan 200 OK
-        
+
         calendar_data = response.json()  # Parse JSON dari respons
         return calendar_data
     except requests.exceptions.RequestException as e:
@@ -65,7 +65,7 @@ def fetch_calendar_economy():
     except ValueError as e:
         logger.error(f"Error: Failed to parse JSON: {e}")
         return None
-    
+
 # TODO* FETCH FINANCIALJUICE FEED
 def fetch_financialjuice_feed(limit: int = 50):
     # URL untuk mendapatkan feed dari RSS2JSON API
@@ -77,7 +77,7 @@ def fetch_financialjuice_feed(limit: int = 50):
         'order_dir': 'desc',  # Urutan descending
         'count': limit  # Ambil 50 berita terbaru
     }
-    
+
     try:
         # Mengambil data dari API
         response = requests.get(url, params=params)
@@ -103,37 +103,58 @@ def fetch_financialjuice_feed(limit: int = 50):
 def reply_message_tg(chat_id: int, text: str):
     """
     Bot reply telegram message
-    
+
     Args:
         chat_id (int): Chat ID to send message
         text (str): Message to send
     Returns:
-        message_id (int): Message ID
-    
+        message_id (int): Message ID of the first chunk or None if error
+
     """
-    token = TELEGRAM_BOT_TOKEN 
+    if text is None:
+        logger.error("Cannot send None as message text")
+        return None
+
+    # Convert to string if not already
+    if not isinstance(text, str):
+        text = str(text)
+
+    token = TELEGRAM_BOT_TOKEN
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    
+
     # if text is too long, split it
     text_chunks = split_text(text)
-    
+
+    first_message_id = None
+
     try:
-        for chunk in text_chunks:
+        for i, chunk in enumerate(text_chunks):
             request = requests.post(url, json={
                 "chat_id": chat_id,
                 "text": chunk,
                 "parse_mode": "Markdown"
             })
             response = request.json()
-            message_id = response['result']['message_id']
-            return message_id
-        
+
+            # Check if the response contains the expected keys
+            if response.get('ok') and 'result' in response and 'message_id' in response['result']:
+                message_id = response['result']['message_id']
+
+                # Save the first message ID to return
+                if i == 0:
+                    first_message_id = message_id
+            else:
+                logger.error(f"Unexpected response format from Telegram API: {response}")
+
+        return first_message_id
+
     except Exception as e:
         logger.error(f"Error while POST a telegram message: {e}")
+        return None
 
 # TODO* DELETE MESSAGE TELEGRAM
 def delete_message_tg(chat_id: int, message_id: int):
-    token = TELEGRAM_BOT_TOKEN 
+    token = TELEGRAM_BOT_TOKEN
     url = f"https://api.telegram.org/bot{token}/deleteMessage"
     data = {
         "chat_id": chat_id,
@@ -147,12 +168,26 @@ def delete_message_tg(chat_id: int, message_id: int):
 
 # TODO* FETCH GEMINI API
 def get_gemini_response(prompt):
+    """
+    Get response from Gemini API
 
+    Args:
+        prompt (str): Prompt to send to Gemini API
+    Returns:
+        str: Response from Gemini API or error message
+    """
     try:
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel("gemini-2.0-flash")
         response = model.generate_content(prompt)
-        return response.text.strip()
+
+        # Check if response has text attribute
+        if hasattr(response, 'text'):
+            return response.text.strip()
+        else:
+            logger.error(f"Unexpected response format from Gemini API: {response}")
+            return "Failed to get a valid response from AI, try again later..."
+
     except Exception as e:
         logger.error(f"Error occurred while fetching Gemini API: {e}")
         return "Failed while processing AI response, try again later..."
@@ -178,9 +213,9 @@ def setup_google_sheets():
 
 # TODO* SAVE TELEGRAM ID TO GOOGLE SHEET
 def save_id_to_google_sheets(chat_id, username):
-    
+
     client = setup_google_sheets()
-    
+
     # Open sheet 'CoinData' then select worksheet
     sheet = client.open("CoinData").worksheet("Elephant Agent User")
 
