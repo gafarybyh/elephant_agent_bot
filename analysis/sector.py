@@ -2,24 +2,29 @@ from config.app_config import logger
 from helpers.api_helpers import fetch_data_sector, get_gemini_response
 from helpers.utils import format_to_usd
 
-def generate_sector_prompt(all_sectors_data: list = None, user_question="How does this crypto sector performing today?"):
+def generate_sector_prompt(all_sectors_data: list = None, user_question=None):
     """Generate a prompt for the Gemini model to analyze crypto sector performance."""
+    
+    # Default user question if not provided
+    if user_question is None or user_question.strip() == "":
+        user_question = "How does this crypto sector performing today?"
+
     # Join the sectors data with newlines outside the f-string to avoid backslash issues
     sectors_data_text = "\n".join(all_sectors_data) if all_sectors_data else "• None"
 
     return f"""
 You are a professional crypto market analyst for a Telegram bot. Your task is to assess crypto sector performance based on the user's query and deliver concise, data-driven insights.
 
+User Question: {user_question}
+
 Sector Data:
 {sectors_data_text}
-
-User Question: {user_question}
 
 Pre‐check:
     - If the user's question is NOT about crypto sector performance, respond with: "Sorry, this command (/sector) only for analyze crypto sector performance. Please ask about crypto sectors."
 
 Instructions:
-    - Detect and reply in the same language as the user's question.
+    - Answer in the same language as the user's question.
     - Start with a *bold* title and a one-sentence answer based on user's query context.
     - If the query names a specific sector, analyze only that sector.
     Otherwise, for all sectors:

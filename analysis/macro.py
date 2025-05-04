@@ -58,9 +58,13 @@ def classify_and_format_news(feed):
 
 
 # TODO* GENERATE MACRO PROMPT
-def generate_macro_prompt(us_news: list = None, china_news: list = None, global_news: list = None, calendar_news: list = None, user_question="How does this impact crypto today?"):
+def generate_macro_prompt(us_news: list = None, china_news: list = None, global_news: list = None, calendar_news: list = None, user_question=None):
     """Generate a prompt for the Gemini model to analyze macro news."""
     # Join the news data with newlines outside the f-string to avoid backslash issues
+    
+    if user_question is None or user_question.strip() == "":
+        user_question = "How does this impact crypto today?"
+    
     us_news_text = "\n".join(us_news[:20]) if us_news else "• None"
     china_news_text = "\n".join(china_news[:20]) if china_news else "• None"
     global_news_text = "\n".join(global_news[:20]) if global_news else "• None"
