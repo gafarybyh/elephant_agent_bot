@@ -1,6 +1,5 @@
 requests
 python-telegram-bot==20.6
-openai
 flask==2.3.3
 python-dotenv==1.0.0
 google-generativeai

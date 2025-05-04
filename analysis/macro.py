@@ -61,10 +61,10 @@ def classify_and_format_news(feed):
 def generate_macro_prompt(us_news: list = None, china_news: list = None, global_news: list = None, calendar_news: list = None, user_question="How does this impact crypto today?"):
     """Generate a prompt for the Gemini model to analyze macro news."""
     # Join the news data with newlines outside the f-string to avoid backslash issues
-    us_news_text = "\n".join(us_news[:10]) if us_news else "• None"
-    china_news_text = "\n".join(china_news[:10]) if china_news else "• None"
-    global_news_text = "\n".join(global_news[:10]) if global_news else "• None"
-    calendar_news_text = "\n".join(calendar_news[:10]) if calendar_news else "• None"
+    us_news_text = "\n".join(us_news[:20]) if us_news else "• None"
+    china_news_text = "\n".join(china_news[:20]) if china_news else "• None"
+    global_news_text = "\n".join(global_news[:20]) if global_news else "• None"
+    calendar_news_text = "\n".join(calendar_news[:20]) if calendar_news else "• None"
     
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -88,7 +88,7 @@ Calendar Economy:
 
 Rules:
     - Prioritize categories: central bank policy (Fed, ECB, etc), inflation (CPI, PPI), labor market (NFP, unemployment), GDP, liquidity shifts, financial conditions, geopolitical tensions
-    - Focus only on *latest, high-impact headlines* relevant to crypto/gold/risk sentiment
+    - Focus only on *latest, medium to high impact headlines* relevant to crypto/gold/risk sentiment
     - Be concise, objective, and use Telegram format
     - Detect and reply in the same language as the user's question
 
@@ -96,7 +96,7 @@ Respond using this format (max 15 lines):
 
     🌍 *Macro Outlook*
 
-    📊 Impact: [Bullish / Neutral / Bearish]
+    📉 *Dovish/Hawkish Scale:* [X/10] → [Summary of short-term market bias on risk-on or risk-off assets] (0 = Extremely Dovish, 10 = Extremely Hawkish)
 
     🔑 Key Drivers:
     • 🇺🇸 US: [Most relevant US headline(s)]
@@ -111,9 +111,7 @@ Respond using this format (max 15 lines):
     • Upside: [Possible bullish catalyst]
     • Downside: [Most critical bearish risk]
 
-    📉 *Dovish/Hawkish Scale:* [X/10] → [Impact on crypto] (0 = Extremely Dovish, 10 = Extremely Hawkish)
-
-    🎯 Action: [Risk On / Risk Off] → [Tactical trading idea]
+    🎯 Action: [Risk-On / Risk-Off] → [Tactical trading idea or asset allocation suggestion]
     
 Respond only with the formatted analysis or the fallback message. No extra commentary.
 """
