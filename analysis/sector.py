@@ -30,7 +30,7 @@ Instructions:
     Otherwise, for all sectors:
         • Rank by Market Cap Change, Activity Growth, and Volume Spike.
     - For each sector:
-        • Format **bold** sector names and metrics values.
+        • Format *bold* sector names and metrics values.
         • Format currency values with "M" or "B" (million/billion).
         • Format percentage values with two decimal places.
         • Output in Telegram format:
