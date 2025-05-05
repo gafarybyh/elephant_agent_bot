@@ -26,8 +26,9 @@ def webhook():
         # Extract basic information from the update
         if 'message' in update_json:
 
-            # Get the chat ID
+            # Get the chat ID and Username
             chat_id = update_json['message']['chat']['id']
+            username = update_json['message']['chat'].get('username', '')
 
             # If it's a text message
             if 'text' in update_json['message']:
@@ -39,21 +40,24 @@ def webhook():
                 # TODO* START COMMAND
                 if text.startswith('/start'):
                     reply_text = WELCOME_MESSAGE
-
+ 
                     reply_message_tg(chat_id, reply_text)
 
                     # Save user ID to Google Sheets when using webhook
                     try:
-                        username = update_json['message']['chat'].get('username', '')
-                        logger.info(f"Saving user {chat_id} with username {username} to Google Sheets")
                         save_id_to_google_sheets(chat_id, username)
-                        logger.info(f"Successfully saved user {chat_id} to Google Sheets")
                     except Exception as e:
                         logger.error(f"Error saving user ID to Google Sheets: {e}")
                 # *HELP COMMAND
                 elif text.startswith('/help'):
                     reply_text = HELP_MESSAGE
                     reply_message_tg(chat_id, reply_text)
+
+                    # Save user ID to Google Sheets when using webhook
+                    try:
+                        save_id_to_google_sheets(chat_id, username)
+                    except Exception as e:
+                        logger.error(f"Error saving user ID to Google Sheets: {e}")
                 # *INFO COMMAND
                 elif text.startswith('/info'):
                     reply_text = INFO_MESSAGE

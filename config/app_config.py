@@ -30,13 +30,13 @@ WELCOME_IMAGE_PATH = 'raynor-bg.jpg'
 
 WELCOME_MESSAGE = (
     "👋 Welcome to Elephant Agent Bot!\n\n"
-    "Your AI-Powered Crypto Analysis Assistant\n\n"
+    "Your AI-Powered Crypto Analysis Assistant, designed to help crypto traders make smarter decisions through comprehensive market analysis and AI-powered insights.\n\n"
     "🔍 Available Features:\n"
     "• Market Dominance Alert\n"
     "• Hype Tokens Alert\n"
     "• Crypto Screener\n"
     "• Macro Sentiment Analysis\n"
-    "• AI Analysis (Under development)\n\n"
+    "• Smart market insights powered by AI\n"
     "Click the button below to open Screener! or /help to see command"
 )
 

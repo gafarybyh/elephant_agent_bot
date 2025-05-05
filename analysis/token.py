@@ -5,7 +5,7 @@ def fetch_data():
     url = "https://raynor-api.gafarybyh.workers.dev/sheets/1PW67I8_1IFuvz5GBe-Gl8skCLzylRlOR8IWvv_mxCvI/Tokens"
     response = requests.get(url)
     response.raise_for_status()
-    return response.json()
+    return response.json() 
 
 def categorize_market_cap(market_cap):
     if market_cap > 10_000_000_000:

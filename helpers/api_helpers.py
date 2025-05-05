@@ -230,7 +230,11 @@ def save_id_to_google_sheets(chat_id, username):
     if str(chat_id) in chat_ids:
         # print(f"Chat ID {chat_id} sudah terdaftar. Tidak menambahkan.")
         return
-
+    
+    logger.info(f"Saving user {chat_id} with username {username} to Google Sheets")
+    
     # Menambahkan data ke baris berikutnya mulai dari baris kedua
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sheet.append_row([chat_id, username, timestamp])
+    
+    logger.info(f"Successfully saved user {chat_id} to Google Sheets")

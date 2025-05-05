@@ -5,54 +5,85 @@ from config.app_config import logger
 
 # TODO* CLASSIFY AND FORMAT NEWS
 def classify_and_format_news(feed):
+
     us_keywords = [
     "fed", "fomc", "pce", "cpi", "ppi", "core inflation", "rate hike", "rate cut",
     "dot plot", "tightening", "easing", "nfp", "nonfarm", "jobless claims", "jolts",
-    "payroll", "unemployment", "employment", "labor market",
-    "treasury", "yellen", "bessent", "fiscal", "bond yields", "yields", "bonds",
-    "dollar", "usd", "bank supervision", "bank regulation", "stress test",
-    "retail sales", "consumer confidence", "ism", "pmi", "gdp", "gdi",
-    "financial conditions", "cost index", "ecb watch", "personal spending"
+    "payroll", "unemployment", "employment", "labor market", "treasury", "bond yields",
+    "yields", "bonds", "dollar", "usd", "fiscal", "government shutdown", "budget deal",
+    "retail sales", "consumer confidence", "ism", "pmi", "gdp", "gdi", "spending",
+    "biden", "trump", "white house", "congress", "debt ceiling", "fiscal policy"
     ]
-
-
 
     china_keywords = [
-    "china", "pboe", "pboc", "xi jinping", "stimulus", "property crisis",
-    "real estate", "liquidity", "yuan", "shadow banking", "evergrande",
-    "beijing", "chinese economy", "local government debt", "soes"
+    "china", "beijing", "xi jinping", "li qiang", "pboe", "pboc", "stimulus",
+    "real estate", "property sector", "property crisis", "evergrande", "country garden",
+    "local government debt", "shadow banking", "yuan", "soes", "manufacturing", "exports",
+    "economic support", "infrastructure boost", "liquidity support"
     ]
-
 
     global_keywords = [
-    "ecb", "europe", "eurozone", "germany", "france", "inflation", "disinflation",
-    "rate hike", "rate cut", "boe", "boj", "uk", "japan", "kuroda", "geopolitical",
-    "ukraine", "russia", "nato", "israel", "iran", "middle east", "saudi", "opec", "oil",
-    "gulf summit", "supply shock", "crude", "energy prices", "conflict", "tensions"
+    "ecb", "europe", "eurozone", "boe", "boj", "boc", "rba", "rbnz",
+    "germany", "france", "uk", "japan", "canada", "australia", "new zealand", "switzerland",
+    "turkey", "singapore", "inflation", "disinflation", "deflation",
+    "geopolitical", "ukraine", "russia", "iran", "israel", "middle east", "nato",
+    "opec", "oil", "crude", "energy prices", "supply shock", "commodity", "brent", "conflict",
+    "tensions", "ceasefire", "war", "missile", "gaza", "hezbollah", "houthis", "yemen",
+    "eur", "gbp", "jpy", "cad", "aud", "nzd", "chf"
     ]
 
+    us_locations = [
+    "united states", "us", "america", "usa", "washington", "new york", "fed", "fomc", "yellen",
+    "biden", "trump", "white house", "congress"
+    ]
+    china_locations = [
+    "china", "beijing", "shanghai", "xi jinping", "pboe", "pboc", "chinese"
+    ]
+    global_locations = [
+    "europe", "germany", "france", "uk", "england", "london",
+    "japan", "tokyo", "canada", "ottawa", "australia", "sydney", "new zealand",
+    "switzerland", "zurich", "turkey", "ankara", "singapore", "opec",
+    "middle east", "iran", "israel", "russia", "ukraine", "saudi", "gaza", "hezbollah", "yemen", "swiss", "turkish"
+    ]
 
-     # Compile regex patterns for each category
     def build_pattern(keywords):
         return re.compile(r'\b(' + '|'.join(map(re.escape, keywords)) + r')\b', re.IGNORECASE)
+
 
     us_pattern = build_pattern(us_keywords)
     china_pattern = build_pattern(china_keywords)
     global_pattern = build_pattern(global_keywords)
+    
+    us_location_pattern = build_pattern(us_locations)
+    china_location_pattern = build_pattern(china_locations)
+    global_location_pattern = build_pattern(global_locations)
 
     us_news, china_news, global_news = [], [], []
 
-    for item in feed.get('items', []):  # Access 'items' key safely
+    for item in feed.get('items', []):
         title = item.get('title', '').removeprefix('FinancialJuice: ').strip()
-        published = item.get('pubDate', '')  # Use 'pubDate' which is the correct key in RSS feed
+        published = item.get('pubDate', '')
         formatted_title = f"• {title} ({published})"
+       
+        is_us = us_pattern.search(title)
+        is_china = china_pattern.search(title)
+        is_global = global_pattern.search(title)
 
-        if us_pattern.search(title):
+        if is_us and us_location_pattern.search(title):
             us_news.append(formatted_title)
-        elif china_pattern.search(title):
+        elif is_china and china_location_pattern.search(title):
             china_news.append(formatted_title)
-        elif global_pattern.search(title):
+        elif is_global and global_location_pattern.search(title):
             global_news.append(formatted_title)
+        else:
+            if us_location_pattern.search(title):
+                us_news.append(formatted_title)
+            elif china_location_pattern.search(title):
+                china_news.append(formatted_title)
+            elif global_location_pattern.search(title):
+                global_news.append(formatted_title)
+            else:
+                global_news.append(formatted_title)
 
     return us_news, china_news, global_news
 
@@ -87,7 +118,7 @@ China News:
 Global News:
 {global_news_text}
 
-Calendar Economy:
+Economic Calendar (USD-focused):
 {calendar_news_text}
 
 Rules:
@@ -111,16 +142,16 @@ Respond using this format (max 15 lines):
     • 🇺🇸 *US:* [Most relevant US headline(s) in simple terms]
     • 🇨🇳 *China:* [Most relevant China headline(s) in simple terms]
     • 🌐 *Global:* [Most relevant global headline(s) in simple terms]
-    • 📊 *Calendar:* [Important upcoming events explained simply]
+    • 📊 *Calendar:* [Important upcoming economic calendar events explained simply]
 
     💡 *What This Means:*
     [Simple explanation of how these events might affect crypto, gold, or investments]
 
     ⚖️ *What to Watch:*
-    • *Positive Possibility:* [Potential good key drivers in simple terms]
-    • *Risk to Consider:* [Potential bad key drivers in simple terms]
+    • *Positive Possibility:* [Potential good key drivers in simple terms and the most likely affected asset class]
+    • *Risk to Consider:* [Potential bad key drivers in simple terms and the most likely affected asset class]
 
-    🎯 *Suggestion:* [Simple action idea] → [Brief explanation why]
+    🎯 *Suggestion:* [Simple asset allocation idea, e.g. "Lean defensive until CPI release", and brief reasoning why]
     
 Respond only with the formatted analysis or the fallback message and reply in the same language as the user's question (User Question: {user_question}). No extra commentary.
 """
