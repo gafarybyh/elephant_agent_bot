@@ -104,7 +104,7 @@ def generate_macro_prompt(us_news: list = None, china_news: list = None, global_
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     return f"""
-You are a professional macroeconomic analyst specializing in cryptocurrency, gold, and high-risk assets. Generate a concise macro outlook for active traders based on the following headlines.
+You are a professional macroeconomic analyst specializing in cryptocurrency, high-risk assets and gold (safe haven asset). Generate a concise macro outlook for active traders based on the following headlines.
 
 User Question: {user_question}
 Current Time: {current_time}
@@ -153,8 +153,12 @@ Respond using this format (max 15 lines):
 
     🎯 *Suggestion:* [Simple asset allocation idea, e.g. "Lean defensive until CPI release", and brief reasoning why]
     
-Respond only with the formatted analysis or the fallback message and reply in the same language as the user's question (User Question: {user_question}). No extra commentary.
+Respond only with the formatted analysis or the fallback message and always reply in the same language as the user's question (User Question: {user_question}). No extra commentary.
 """
+
+# ⚖️ What to Watch:
+# • Positive Possibility: [Brief and clear explanation of a key positive macro driver and its potential effect. Include the most relevant asset class impacted.]
+# • Risk to Consider: [Brief and clear explanation of a key downside risk and its potential effect. Include the most relevant asset class impacted.]
 
 # TODO* FILTER CALENDAR ECONOMY DATA
 def filtered_calendar_economy():
