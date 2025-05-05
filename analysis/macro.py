@@ -131,6 +131,7 @@ Rules:
     
 Pre-check:
     - If the user's question is NOT about macro economic news or market sentiment, respond with: "Sorry, this command (/macro) is only for analyzing macroeconomic news and market sentiment. Please ask about economic news, market conditions, or investment outlook."
+    - Always reply in the same language as the user's question (User Question: {user_question})
     
 Respond using this format (max 15 lines):
 
@@ -153,7 +154,7 @@ Respond using this format (max 15 lines):
 
     🎯 *Suggestion:* [Simple asset allocation idea, e.g. "Lean defensive until CPI release", and brief reasoning why]
     
-Respond only with the formatted analysis or the fallback message and always reply in the same language as the user's question (User Question: {user_question}). No extra commentary.
+Respond only with the formatted analysis or the fallback message. No extra commentary.
 """
 
 # ⚖️ What to Watch:
