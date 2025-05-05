@@ -18,18 +18,11 @@ RSS2JSON_API_KEY = os.getenv("RSS2JSON_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GOOGLE_CREDENTIALS = os.getenv('GOOGLE_CREDENTIALS')
 SHEET_URL_ID = os.getenv("SHEET_URL_ID")
-
-# Sheet URL
-SHEET_URL_SECTOR = f"https://raynor-api.gafarybyh.workers.dev/sheets/{SHEET_URL_ID}/Sector%20Category"
-
-SHEET_URL_TOKEN = f"https://raynor-api.gafarybyh.workers.dev/sheets/{SHEET_URL_ID}/Tokens"
+BOT_MODE = os.getenv("BOT_MODE", "webhook") # Default to webhook
 
 # Webhook Config for PythonAnywhere
 WEBHOOK_USERNAME = "gafarybyh" 
 WEBHOOK_URL = f"https://{WEBHOOK_USERNAME}.pythonanywhere.com/webhook"
-
-# Bot Mode
-BOT_MODE = os.getenv("BOT_MODE", "webhook") # Default to webhook
 
 # Telegram Config
 MINI_APP_URL = "https://elephant-agent.pages.dev/"

@@ -63,7 +63,7 @@ def generate_macro_prompt(us_news: list = None, china_news: list = None, global_
     # Join the news data with newlines outside the f-string to avoid backslash issues
     
     if user_question is None or user_question.strip() == "":
-        user_question = "How does this impact crypto today?"
+        user_question = "What is the sentiment of today's news?"
     
     us_news_text = "\n".join(us_news[:20]) if us_news else "• None"
     china_news_text = "\n".join(china_news[:20]) if china_news else "• None"
@@ -94,30 +94,35 @@ Rules:
     - Prioritize categories: central bank policy (Fed, ECB, etc), inflation (CPI, PPI), labor market (NFP, unemployment), GDP, liquidity shifts, financial conditions, geopolitical tensions
     - Focus only on *latest, medium to high impact headlines* relevant to crypto/gold/risk sentiment
     - Be concise, objective, and use Telegram format
-    - Detect and reply in the same language as the user's question
-
+    - Use simple, non-technical language that general audience can understand
+    - Briefly explain financial terms when first mentioned (e.g., "CPI (Consumer Price Index, a measure of inflation)")
+    - Translate market jargon into plain language (e.g., instead of "hawkish Fed stance" say "Fed's aggressive approach to fighting inflation")
+    
+Pre-check:
+    - If the user's question is NOT about macro economic news or market sentiment, respond with: "Sorry, this command (/macro) is only for analyzing macroeconomic news and market sentiment. Please ask about economic news, market conditions, or investment outlook."
+    
 Respond using this format (max 15 lines):
 
     🌍 *Macro Outlook*
 
-    📉 *Dovish/Hawkish Scale:* [X/10] → [Summary of short-term market bias on risk-on or risk-off assets] (0 = Extremely Dovish, 10 = Extremely Hawkish)
+    📉 *Market Sentiment:* Risk [X/10] → [Simple explanation of what this means for investors] (0 = Very Positive for Risk Assets, 10 = Very Negative for Risk Assets)
 
-    🔑 Key Drivers:
-    • 🇺🇸 US: [Most relevant US headline(s)]
-    • 🇨🇳 China: [Most relevant China headline(s)]
-    • 🌐 Global: [Most relevant global headline(s)]
-    • 📊 Calendar: [Analysis of upcoming economic events or past events]
+    🔑 *Key Driver:*
+    • 🇺🇸 *US:* [Most relevant US headline(s) in simple terms]
+    • 🇨🇳 *China:* [Most relevant China headline(s) in simple terms]
+    • 🌐 *Global:* [Most relevant global headline(s) in simple terms]
+    • 📊 *Calendar:* [Important upcoming events explained simply]
 
-    💡 Summary:
-    [Short and direct summary of how these events affect crypto, gold, or general risk assets]
+    💡 *What This Means:*
+    [Simple explanation of how these events might affect crypto, gold, or investments]
 
-    ⚖️ Risk Factors:
-    • Upside: [Possible bullish catalyst]
-    • Downside: [Most critical bearish risk]
+    ⚖️ *What to Watch:*
+    • *Positive Possibility:* [Potential good key drivers in simple terms]
+    • *Risk to Consider:* [Potential bad key drivers in simple terms]
 
-    🎯 Action: [Risk-On / Risk-Off] → [Tactical trading idea or asset allocation suggestion]
+    🎯 *Suggestion:* [Simple action idea] → [Brief explanation why]
     
-Respond only with the formatted analysis or the fallback message. No extra commentary.
+Respond only with the formatted analysis or the fallback message and reply in the same language as the user's question (User Question: {user_question}). No extra commentary.
 """
 
 # TODO* FILTER CALENDAR ECONOMY DATA
@@ -279,4 +284,54 @@ def analyze_macro_news(user_query):
 
 #     🎯 *Positioning:* *[Risk-On / Risk-Off]* → [1 clear trading insight or asset allocation suggestion]
 
+# """
+
+
+# BACKUP MY PROMPT
+# """
+# You are a professional macroeconomic analyst specializing in cryptocurrency, gold, and high-risk assets. Generate a concise macro outlook for active traders based on the following headlines.
+
+# User Question: {user_question}
+# Current Time: {current_time}
+
+# US News:
+# {us_news_text}
+
+# China News:
+# {china_news_text}
+
+# Global News:
+# {global_news_text}
+
+# Calendar Economy:
+# {calendar_news_text}
+
+# Rules:
+#     - Prioritize categories: central bank policy (Fed, ECB, etc), inflation (CPI, PPI), labor market (NFP, unemployment), GDP, liquidity shifts, financial conditions, geopolitical tensions
+#     - Focus only on *latest, medium to high impact headlines* relevant to crypto/gold/risk sentiment
+#     - Be concise, objective, and use Telegram format
+#     - Detect and reply in the same language as the user's question
+
+# Respond using this format (max 15 lines):
+
+#     🌍 *Macro Outlook*
+
+#     📉 *Dovish/Hawkish Scale:* [X/10] → [Summary of short-term market bias on risk-on or risk-off assets] (0 = Extremely Dovish, 10 = Extremely Hawkish)
+
+#     🔑 Key Drivers:
+#     • 🇺🇸 US: [Most relevant US headline(s)]
+#     • 🇨🇳 China: [Most relevant China headline(s)]
+#     • 🌐 Global: [Most relevant global headline(s)]
+#     • 📊 Calendar: [Analysis of upcoming economic events or past events]
+
+#     💡 Summary:
+#     [Short and direct summary of how these events affect crypto, gold, or general risk assets]
+
+#     ⚖️ Risk Factors:
+#     • Upside: [Possible bullish catalyst]
+#     • Downside: [Most critical bearish risk]
+
+#     🎯 Action: [Risk-On / Risk-Off] → [Tactical trading idea or asset allocation suggestion]
+    
+# Respond only with the formatted analysis or the fallback message. No extra commentary.
 # """

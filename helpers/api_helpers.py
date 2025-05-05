@@ -5,13 +5,14 @@ import google.generativeai as genai
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from helpers.utils import split_text
-from config.app_config import (logger, RSS2JSON_API_KEY, SHEET_URL_SECTOR, SHEET_URL_TOKEN, GEMINI_API_KEY, GOOGLE_CREDENTIALS, TELEGRAM_BOT_TOKEN)
+from config.app_config import (logger, RSS2JSON_API_KEY, SHEET_URL_ID, GEMINI_API_KEY, GOOGLE_CREDENTIALS, TELEGRAM_BOT_TOKEN)
 
 
 # TODO* FETCH DATA SECTOR
 def fetch_data_sector():
+    url = f"https://raynor-api.gafarybyh.workers.dev/sheets/{SHEET_URL_ID}/Sector%20Category"
     try:
-        response = requests.get(SHEET_URL_SECTOR)
+        response = requests.get(url) 
         response.raise_for_status()  # Memastikan status OK (200)
 
         # Periksa apakah response JSON yang diterima sesuai format yang diharapkan
@@ -32,8 +33,9 @@ def fetch_data_sector():
 
 # TODO* FETCH DATA TOKEN
 def fetch_data_token():
+    url = f"https://raynor-api.gafarybyh.workers.dev/sheets/{SHEET_URL_ID}/Tokens"
     try:
-        response = requests.get(SHEET_URL_TOKEN)
+        response = requests.get(url)
         response.raise_for_status()
         try:
             tokens = response.json()
