@@ -57,7 +57,7 @@ def analyze_sector(user_query):
         if raw_sectors is None or 'values' not in raw_sectors:
             return "Error: Failed to fetch sector data, or No 'values' field in sector data, try again later..."
 
-        sector_data = raw_sectors['values'][1:]  # Ignore header at first index
+        sector_data = raw_sectors['values'][1:]  # Ignore header at [0:]
 
         # Formatted Sectors
         sectors_formatted = []

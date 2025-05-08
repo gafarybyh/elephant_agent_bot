@@ -3,6 +3,7 @@
 
 # Folders
 __pycache__/
+app_env/
 
 # Files
 credentials.json

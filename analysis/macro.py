@@ -94,7 +94,7 @@ def generate_macro_prompt(us_news: list = None, china_news: list = None, global_
     # Join the news data with newlines outside the f-string to avoid backslash issues
     
     if user_question is None or user_question.strip() == "":
-        user_question = "What is the sentiment of today's news?"
+        user_question = "What is crypto sentiment of today's news?"
     
     us_news_text = "\n".join(us_news[:20]) if us_news else "• None"
     china_news_text = "\n".join(china_news[:20]) if china_news else "• None"
@@ -123,21 +123,21 @@ Economic Calendar (USD-focused):
 
 Rules:
     - Prioritize categories: central bank policy (Fed, ECB, etc), inflation (CPI, PPI), labor market (NFP, unemployment), GDP, liquidity shifts, financial conditions, geopolitical tensions
-    - Focus only on *latest, medium to high impact headlines* relevant to crypto/gold/risk sentiment
+    - Focus only on *latest, medium to high impact headlines especially US* relevant to risk-on/risk-off asset or user question asset context
     - Be concise, objective, and use Telegram format
     - Use simple, non-technical language that general audience can understand
     - Briefly explain financial terms when first mentioned (e.g., "CPI (Consumer Price Index, a measure of inflation)")
     - Translate market jargon into plain language (e.g., instead of "hawkish Fed stance" say "Fed's aggressive approach to fighting inflation")
-    
+
 Pre-check:
     - If the user's question is NOT about macro economic news or market sentiment, respond with: "Sorry, this command (/macro) is only for analyzing macroeconomic news and market sentiment. Please ask about economic news, market conditions, or investment outlook."
     - Always reply in the same language as the user's question (User Question: {user_question})
-    
+
 Respond using this format (max 15 lines):
 
-    🌍 *Macro Outlook*
+    🌍 *[Macro Outlook title]*
 
-    📉 *Market Sentiment:* Risk [X/10] → [Simple explanation of what this means for investors] (0 = Very Positive for Risk Assets, 10 = Very Negative for Risk Assets)
+    📉 *Market Sentiment:* [Simple explanation of what this means for investors, is market sentiment condition on risk-on or risk-off asset?]
 
     🔑 *Key Driver:*
     • 🇺🇸 *US:* [Most relevant US headline(s) in simple terms]
@@ -153,7 +153,7 @@ Respond using this format (max 15 lines):
     • *Risk to Consider:* [Potential bad key drivers in simple terms and the most likely affected asset class]
 
     🎯 *Suggestion:* [Simple asset allocation idea, e.g. "Lean defensive until CPI release", and brief reasoning why]
-    
+
 Respond only with the formatted analysis or the fallback message. No extra commentary.
 """
 

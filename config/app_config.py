@@ -41,19 +41,24 @@ WELCOME_MESSAGE = (
 )
 
 HELP_MESSAGE = (
-    "🤖 Available Commands:\n\n"
-    "Basic Commands:\n"
-    "/start - Start the bot\n"
-    "/help - Show all commands\n"
-    "/info - Bot information\n"
-    "/contact - Contact support\n\n"
-    "Analysis Commands:\n"
-    "/sector - Ask AI to analyze sector\n"
-    "Example: /sector how is defi performing today?\n\n"
-    "/macro - Ask AI to analyze current Macro Sentiment\n"
-    "Example: /macro what is the sentiment of today's news?\n\n"
-    "Coming Soon:\n"
-    "/token - Ask AI to analyze token"
+    "🤖 **Available Commands:**\n\n"
+    "📌 **Basic Commands:**\n"
+    "  /start - Start the bot\n"
+    "  /help - Show all commands\n"
+    "  /info - Get bot information\n"
+    "  /contact - Contact support\n\n"
+    "📊 **Analysis Commands:**\n"
+    "  /sector - Ask AI to analyze a sector\n"
+    "    _Example: /sector how is DeFi performing today?_\n"
+    "  /macro - Ask AI to analyze current macro sentiment\n"
+    "    _Example: /macro what is the crypto sentiment of today's news?_\n\n"
+    "📈 **Market Momentum Scan (up to 15 tokens):**\n"
+    "  /largecap - Show largecap momentum tokens\n"
+    "  /midcap - Show midcap momentum tokens\n"
+    "  /smallcap - Show smallcap momentum tokens\n"
+    "  /microcap - Show microcap momentum tokens\n"
+    "🚀 **Coming Soon:**\n"
+    "  /token - Ask AI to analyze a specific token\n"
 )
 
 TOKEN_MESSAGE = (

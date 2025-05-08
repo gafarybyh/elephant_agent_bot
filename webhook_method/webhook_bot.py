@@ -2,6 +2,7 @@ import requests
 from flask import Flask, request, Response
 from analysis.sector import analyze_sector
 from analysis.macro import analyze_macro_news
+from analysis.token import format_category_tokens
 from helpers.api_helpers import (
     save_id_to_google_sheets, reply_message_tg, delete_message_tg
 )
@@ -70,6 +71,42 @@ def webhook():
                 elif text.startswith('/token'):
                     reply_text = TOKEN_MESSAGE
                     reply_message_tg(chat_id, reply_text)
+                
+                # TODO* LARGECAP COMMAND
+                elif text.startswith('/largecap'):
+                  
+                    # Then generate momentum report
+                    momentum_report = format_category_tokens("largeCap")
+
+                    # Reply the analysis result
+                    reply_message_tg(chat_id, momentum_report)
+                
+                # TODO* MIDCAP COMMAND
+                elif text.startswith('/midcap'):
+                    
+                    # generate momentum report
+                    momentum_report = format_category_tokens("midCap")
+
+                    # Reply the analysis result
+                    reply_message_tg(chat_id, momentum_report)
+                
+                # TODO* SMALLCAP COMMAND
+                elif text.startswith('/smallcap'):
+                
+                    # generate momentum report
+                    momentum_report = format_category_tokens("smallCap")
+
+                    # Reply the analysis result
+                    reply_message_tg(chat_id, momentum_report)
+                
+                # TODO* MICROCAP COMMAND
+                elif text.startswith('/microcap'):
+                    
+                    # Then generate momentum report
+                    momentum_report = format_category_tokens("microCap")
+
+                    # Reply the analysis result
+                    reply_message_tg(chat_id, momentum_report)
 
                 # TODO* SECTOR COMMAND
                 elif text.startswith('/sector'):
@@ -82,13 +119,14 @@ def webhook():
 
                     # Then analyze sector
                     sector_analysis_result = analyze_sector(clean_query_sector)
+                    
+                    if msg_id is not None:
+                        # Delete the initial response
+                        delete_message_tg(chat_id, msg_id)
 
                     # Reply the analysis result
                     reply_message_tg(chat_id, sector_analysis_result)
 
-                    if msg_id is not None:
-                        # Delete the initial response
-                        delete_message_tg(chat_id, msg_id)
 
                 # TODO* MACRO COMMAND
                 elif text.startswith('/macro'):
