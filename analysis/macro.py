@@ -1,4 +1,4 @@
-from helpers.api_helpers import fetch_financialjuice_feed, get_gemini_response, fetch_calendar_economy
+from helpers.api_helpers import fetch_financialjuice_feed, get_gemini_response_v2, fetch_calendar_economy
 from datetime import datetime
 import re
 from config.app_config import logger
@@ -226,7 +226,7 @@ def analyze_macro_news(user_query):
 
         prompt = generate_macro_prompt(us_news, china_news, global_news, calendar_news, user_question=user_query)
 
-        return get_gemini_response(prompt)
+        return get_gemini_response_v2(prompt)
     except Exception as e:
         logger.error(f"Error in analyze_macro_news: {e}")
         return f"Error analyzing macro news: {str(e)[:100]}... Please try again later."

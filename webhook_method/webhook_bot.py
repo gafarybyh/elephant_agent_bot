@@ -1,7 +1,9 @@
 import requests
+import asyncio
 from flask import Flask, request, Response
 from analysis.sector import analyze_sector
 from analysis.macro import analyze_macro_news
+from analysis.tweets import analyze_tweets
 from analysis.token import format_category_tokens
 from helpers.api_helpers import (
     save_id_to_google_sheets, reply_message_tg, delete_message_tg
@@ -146,6 +148,36 @@ def webhook():
 
                     # Reply the analysis result
                     reply_message_tg(chat_id, macro_analysis_result)
+                
+                # TODO* TWEETS COMMAND
+                elif text.startswith('/tweets'):
+                    reply_text = "Analyzing tweets...it will take a while..."
+                    # Send initial response and return message_id
+                    msg_id = reply_message_tg(chat_id, reply_text)
+
+                    # Remove the "/tweets" prefix from the user message
+                    clean_query_tweets = text.replace("/tweets", "", 1).strip()
+
+                    try:
+                        # Run the async function in a synchronous context
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        tweets_analysis_result = loop.run_until_complete(analyze_tweets(clean_query_tweets))
+                        loop.close()
+                        
+                        # Ensure we never send None as message text
+                        if not tweets_analysis_result:
+                            tweets_analysis_result = "Failed to analyze tweets. Please try again later."
+                    except Exception as e:
+                        logger.error(f"Error running async tweets analysis: {e}")
+                        tweets_analysis_result = f"Error analyzing tweets: {str(e)[:100]}... Please try again later."
+
+                    if msg_id is not None:
+                        # Delete the initial response
+                        delete_message_tg(chat_id, msg_id)
+
+                    # Reply the analysis result
+                    reply_message_tg(chat_id, tweets_analysis_result)
 
                 else:
                     reply_text = "I received your message. Use /help to see available commands."
@@ -190,3 +222,5 @@ def start_webhook(host='0.0.0.0', port=5000, debug=False):
 
 if __name__ == "__main__":
     start_webhook(debug=True)
+
+

@@ -8,3 +8,4 @@ app_env/
 # Files
 credentials.json
 app.log
+cookies.json
