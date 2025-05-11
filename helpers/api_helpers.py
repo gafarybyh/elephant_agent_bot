@@ -1,11 +1,13 @@
 import requests
 import json
+import os
 from datetime import datetime
+import time
 import google.generativeai as genai
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from helpers.utils import split_text
-from config.app_config import (logger, RSS2JSON_API_KEY, SHEET_URL_ID, GEMINI_API_KEY, GOOGLE_CREDENTIALS, TELEGRAM_BOT_TOKEN)
+from config.app_config import (PROJECT_ROOT, logger, RSS2JSON_API_KEY, SHEET_URL_ID, GEMINI_API_KEY, GOOGLE_CREDENTIALS, TELEGRAM_BOT_TOKEN)
 
 
 # TODO* FETCH DATA SECTOR
@@ -154,6 +156,19 @@ def reply_message_tg(chat_id: int, text: str):
         logger.error(f"Error while POST a telegram message: {e}")
         return None
 
+
+# TODO* BROADCAST MESSAGE
+def broadcast_message_tg(chat_ids: list, text: str):
+    for chat_id in chat_ids:
+        message_id = reply_message_tg(chat_id, text)
+        if message_id:
+            logger.info(f"Message sent to {chat_id}")
+        else:
+            logger.warning(f"Failed send message to {chat_id}")
+        
+        time.sleep(0.5)  # delay untuk hindari rate limit Telegram
+
+
 # TODO* DELETE MESSAGE TELEGRAM
 def delete_message_tg(chat_id: int, message_id: int):
     token = TELEGRAM_BOT_TOKEN
@@ -224,44 +239,102 @@ def get_gemini_response_v2(prompt):
 
 # TODO* GOOGLE SHEET API CONFIG
 def setup_google_sheets():
+
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-
-    # Cek apakah ada environment variable untuk credentials
-    google_creds_json = GOOGLE_CREDENTIALS
-
-    if google_creds_json:
-        # Gunakan credentials dari environment variable
-        creds_dict = json.loads(google_creds_json)
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    
+    # Path ke credentials.json di root project
+    project_root = PROJECT_ROOT
+    creds_path = os.path.join(project_root, "credentials.json")
+    
+    # Coba gunakan file credentials.json terlebih dahulu
+    if os.path.exists(creds_path):
+        try:
+            logger.info(f"Menggunakan credentials dari file: {creds_path}")
+            creds = ServiceAccountCredentials.from_json_keyfile_name(creds_path, scope)
+            client = gspread.authorize(creds)
+            return client
+        except Exception as e:
+            logger.warning(f"Error menggunakan credentials dari file: {e}")
+            logger.info("Mencoba fallback ke environment variable...")
+            # Lanjut ke fallback
     else:
-        # Fallback ke file credentials.json untuk development
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-
-    client = gspread.authorize(creds)
-    return client
+        logger.warning(f"File credentials tidak ditemukan di: {creds_path}")
+        logger.info("Mencoba fallback ke environment variable...")
+        # Lanjut ke fallback
+    
+    # Fallback: Coba gunakan credentials dari environment variable
+    try:
+        google_creds_json = GOOGLE_CREDENTIALS
+        if not google_creds_json:
+            logger.error("Environment variable GOOGLE_CREDENTIALS kosong")
+            raise ValueError("GOOGLE_CREDENTIALS kosong")
+            
+        logger.info("Menggunakan credentials dari environment variable")
+        
+        # Coba perbaiki format JSON yang umum bermasalah
+        fixed_json = google_creds_json.replace('\\"', '"').replace('\\n', '\n')
+        
+        try:
+            # Coba parse JSON
+            creds_dict = json.loads(fixed_json)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON tidak valid: {e}")
+            raise
+        
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        client = gspread.authorize(creds)
+        return client
+    except Exception as e:
+        logger.error(f"Error menggunakan credentials dari environment variable: {e}")
+        raise Exception(f"Tidak dapat mengautentikasi ke Google Sheets: {e}")
 
 # TODO* SAVE TELEGRAM ID TO GOOGLE SHEET
 def save_id_to_google_sheets(chat_id, username):
+    try:
+        client = setup_google_sheets()
 
-    client = setup_google_sheets()
+        # Open sheet 'CoinData' then select worksheet
+        sheet = client.open("CoinData").worksheet("Elephant Agent User")
 
-    # Open sheet 'CoinData' then select worksheet
-    sheet = client.open("CoinData").worksheet("Elephant Agent User")
+        # Tambahkan header (opsional) jika belum ada
+        if sheet.cell(1, 1).value is None:  # Jika sel A1 kosong
+            sheet.update("A1", [["Chat ID", "Username", "Timestamp"]])
 
-    # Tambahkan header (opsional) jika belum ada
-    if sheet.cell(1, 1).value is None:  # Jika sel A1 kosong
-        sheet.update("A1", [["Chat ID", "Username", "Timestamp"]])
+        # Periksa apakah Chat ID sudah ada
+        chat_ids = sheet.col_values(1)  # Ambil semua Chat ID dari kolom A
+        if str(chat_id) in chat_ids:
+            # print(f"Chat ID {chat_id} sudah terdaftar. Tidak menambahkan.")
+            return
+        
+        logger.info(f"Saving user {chat_id} with username {username} to Google Sheets")
+        
+        # Menambahkan data ke baris berikutnya mulai dari baris kedua
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sheet.append_row([chat_id, username, timestamp])
+        
+        logger.info(f"Successfully saved user {chat_id} to Google Sheets")
+    except Exception as e:
+        logger.error(f"Error saving user ID to Google Sheets: {e}")
+        # Continue execution without raising the exception
 
-    # Periksa apakah Chat ID sudah ada
-    chat_ids = sheet.col_values(1)  # Ambil semua Chat ID dari kolom A
-    if str(chat_id) in chat_ids:
-        # print(f"Chat ID {chat_id} sudah terdaftar. Tidak menambahkan.")
-        return
-    
-    logger.info(f"Saving user {chat_id} with username {username} to Google Sheets")
-    
-    # Menambahkan data ke baris berikutnya mulai dari baris kedua
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sheet.append_row([chat_id, username, timestamp])
-    
-    logger.info(f"Successfully saved user {chat_id} to Google Sheets")
+# TODO* GET ALL CHAT IDs FROM GOOGLE SHEET
+def get_all_chat_ids_from_sheets():
+    try:
+        client = setup_google_sheets()
+        sheet = client.open("CoinData").worksheet("Elephant Agent User")
+
+        chat_ids = sheet.col_values(1)[1:]  # skip header
+        valid_chat_ids = []
+
+        for cid in chat_ids:
+            try:
+                cid_int = int(cid)
+                valid_chat_ids.append(cid_int)
+            except ValueError:
+                logger.warning(f"Invalid chat ID found: {cid}")
+
+        logger.info(f"Retrieved {len(valid_chat_ids)} valid chat IDs from sheets")
+        return valid_chat_ids
+    except Exception as e:
+        logger.error(f"Error retrieving chat IDs from sheets: {e}")
+        return []  # Return empty list instead of None on error

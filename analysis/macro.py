@@ -203,7 +203,7 @@ def filtered_calendar_economy():
     return calendar_news
 
 # TODO* ANALYZE MACRO NEWS
-def analyze_macro_news(user_query):
+def analyze_macro_news(user_query: str = None):
     try:
         raw_news = fetch_financialjuice_feed()
 

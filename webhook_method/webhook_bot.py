@@ -1,12 +1,13 @@
 import requests
 import asyncio
+import json
 from flask import Flask, request, Response
 from analysis.sector import analyze_sector
 from analysis.macro import analyze_macro_news
 from analysis.tweets import analyze_tweets
 from analysis.token import format_category_tokens
 from helpers.api_helpers import (
-    save_id_to_google_sheets, reply_message_tg, delete_message_tg
+    broadcast_message_tg, get_all_chat_ids_from_sheets, save_id_to_google_sheets, reply_message_tg, delete_message_tg
 )
 from config.app_config import (
     logger, TELEGRAM_BOT_TOKEN, WEBHOOK_URL,
@@ -215,12 +216,45 @@ def set_webhook():
         logger.error(f"Error setting webhook: {e}")
         return f"Error setting webhook: {e}", 500
 
+# TODO* TRIGGER MACRO NOTIFICATION
+@app.route('/trigger_macro', methods=['POST'])
+def trigger_macro_notification():
+    try:
+        # Try to parse JSON with explicit error handling
+        try:
+            data = request.get_json(force=True)
+        except json.JSONDecodeError as json_err:
+            logger.error(f"Invalid JSON in request: {json_err}")
+            return Response(f"Invalid JSON format: {str(json_err)}", status=400)
+
+        if not data or data.get("key") != "macro":
+            return Response("Unauthorized", status=403)
+        
+        macro_analysis_result = analyze_macro_news()
+        
+        all_chat_ids = get_all_chat_ids_from_sheets()
+        if not all_chat_ids:
+            logger.warning("No chat IDs found to broadcast to")
+            return Response("No recipients found", status=200)
+        
+        broadcast_message_tg(all_chat_ids, macro_analysis_result)
+        
+        logger.info("Macro analysis broadcasted successfully")
+        return Response('OK', status=200)
+    except Exception as e:
+        logger.error(f"Error in trigger_macro_notification: {e}")
+        return Response(f"Error processing macro notification: {str(e)}", status=500)        
+
+
+# TODO* START WEBHOOK
 def start_webhook(host='0.0.0.0', port=5000, debug=False):
     """Start the Flask app for webhook"""
     logger.info(f"Starting webhook server on {host}:{port}")
     app.run(host=host, port=port, debug=debug)
 
 if __name__ == "__main__":
+    # For development
     start_webhook(debug=True)
+
 
 

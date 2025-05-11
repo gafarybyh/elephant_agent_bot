@@ -12,6 +12,9 @@ def setup_logging():
 
 logger = logging.getLogger(__name__)
 
+# Project Root PythonAnywhere
+PROJECT_ROOT = "/home/gafarybyh/elephant_agent_bot"
+
 # Environment variable
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 RSS2JSON_API_KEY = os.getenv("RSS2JSON_API_KEY")
