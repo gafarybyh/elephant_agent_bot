@@ -87,7 +87,7 @@ def format_token_summary(token, index=None):
             "```\n"
             f"{rank_indicator} {name.upper()}\n"
             f"💰 MCAP: {format_currency(mcap)} ({mcap_change:.2f}%)\n"
-            f"💲 Price 24h: ${price} {price_change_24h:.2f}% {price_24h_trend}\n"
+            f"💲 Price 24h: ${price} ({price_change_24h:.2f}%) {price_24h_trend}\n"
             f"💲 Price 7d: {price_change_7d:.2f}% {price_7d_trend}\n"
             f"📊 Vol: {format_currency(total_volume)} ({vmr:.2f}% Hype) {hype_icon}\n"
             f"🔄 Turnover: {turnover:.2f}\n"
