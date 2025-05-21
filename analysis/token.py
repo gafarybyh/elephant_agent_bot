@@ -10,6 +10,7 @@ def format_token_summary(token, index=None):
         # Pastikan semua nilai numerik dikonversi dengan benar
         mcap = float(token.get("Market Cap", 0))
         mcap_change = float(token.get("Market Cap (Change 24h)", 0))
+        price = float(token.get("Price", 0))
         price_change_24h = float(token.get("Price Changes 24h", 0))
         price_change_7d = float(token.get("Price Changes 7d", 0))
         total_volume = float(token.get("Total Volume", 0))
@@ -84,15 +85,15 @@ def format_token_summary(token, index=None):
         # Format for Telegram (using emoji and clear formatting)
         return (
             "```\n"
-            f"{rank_indicator}*{name.upper()}*\n"
-            f"💰 MCAP: {format_currency(mcap)} (*{mcap_change:.2f}%*)\n"
-            f"💲 Price 24h: *{price_change_24h:.2f}%* {price_24h_trend}\n"
-            f"💲 Price 7d: *{price_change_7d:.2f}%* {price_7d_trend}\n"
+            f"{rank_indicator} {name.upper()}\n"
+            f"💰 MCAP: {format_currency(mcap)} ({mcap_change:.2f}%)\n"
+            f"💲 Price 24h: ${price} {price_change_24h:.2f}% {price_24h_trend}\n"
+            f"💲 Price 7d: {price_change_7d:.2f}% {price_7d_trend}\n"
             f"📊 Vol: {format_currency(total_volume)} ({vmr:.2f}% Hype) {hype_icon}\n"
-            f"🔄 Turnover: *{turnover:.2f}*\n"
-            f"📈 Volatility: *{volatility:.2f}*\n"
-            f"{momentum_emoji} Momentum: *{momentum_days}d* ({momentum_type})\n"
-            f"🏆 Score: *{score:.2f}*\n"
+            f"🔄 Turnover: {turnover:.2f}\n"
+            f"📈 Volatility: {volatility:.2f}\n"
+            f"{momentum_emoji} Momentum: {momentum_days}d ({momentum_type})\n"
+            f"🏆 Score: {score:.2f}\n"
             f"📝 Strength: {signal}\n"
             "```"
         )
