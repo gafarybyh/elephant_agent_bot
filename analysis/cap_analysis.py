@@ -524,7 +524,7 @@ def detect_early_momentum_v2(category_name):
     # TODO===== TAHAP 7: FILTER DAN URUTKAN HASIL =====
     # Filter tokens with positive MCAP change and minimum momentum score
     min_score_threshold = 0.15  # Minimum score to be considered for early momentum
-    filtered_tokens = [t for t in tokens if t["Market Cap (Change 24h)"] > 0 and t["Early Momentum Score"] >= min_score_threshold]
+    filtered_tokens = [t for t in tokens if t["Market Cap (Change 24h)"] > 0 and t["Price Change 24h"] > 0 and t["Early Momentum Score"] >= min_score_threshold]
 
     # Sort by momentum score
     return sorted(filtered_tokens, key=lambda x: x["Early Momentum Score"], reverse=True)

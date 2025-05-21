@@ -12,7 +12,7 @@ def format_token_summary(token, index=None):
         mcap_change = float(token.get("Market Cap (Change 24h)", 0))
         price_change_24h = float(token.get("Price Changes 24h", 0))
         price_change_7d = float(token.get("Price Changes 7d", 0))
-        volume_changes = float(token.get("Volume Change 24h", 0))
+        total_volume = float(token.get("Total Volume", 0))
         turnover = float(token.get("Turnover Score", 0))
         
         # Pastikan VMR dikonversi dengan benar
@@ -45,15 +45,15 @@ def format_token_summary(token, index=None):
         
         # Determine signal strength
         if score >= 0.8:
-            signal = "STRONG 🔥🔥"
+            signal = "Strong 🔥🔥"
         elif score >= 0.7:
-            signal = "STRONG 🔥"
+            signal = "Strong 🔥"
         elif score >= 0.5:
-            signal = "MEDIUM 📈"
+            signal = "Medium 📈"
         elif score >= 0.3:
-            signal = "WEAK ⚠️"
+            signal = "Weak ⚠️"
         else:
-            signal = "WATCH 👀"
+            signal = "Watch 👀"
 
         # Add outlier indicator - pastikan is_outlier adalah boolean
         is_outlier = bool(token.get("Is Outlier", False))
@@ -69,17 +69,26 @@ def format_token_summary(token, index=None):
             rank_indicator = ""
         
         # Format price changes with trend indicators
-        price_24h_trend = "↗️" if price_change_24h > 0 else "↘️"
-        price_7d_trend = "↗️" if price_change_7d > 0 else "↘️"
+        price_24h_trend = "🟢" if price_change_24h > 0 else "🔴"
+        price_7d_trend = "🟢" if price_change_7d > 0 else "🔴"
+        
+        if vmr > 50:
+            hype_icon = "🔥"
+        elif vmr > 30:
+            hype_icon = "📈"
+        elif vmr > 15:
+            hype_icon = "👀"
+        else:
+            hype_icon = ""
         
         # Format for Telegram (using emoji and clear formatting)
         return (
             "```\n"
-            f"{rank_indicator}*{name}*\n"
+            f"{rank_indicator}*{name.upper()}*\n"
             f"💰 MCAP: {format_currency(mcap)} (*{mcap_change:.2f}%*)\n"
             f"💲 Price 24h: *{price_change_24h:.2f}%* {price_24h_trend}\n"
             f"💲 Price 7d: *{price_change_7d:.2f}%* {price_7d_trend}\n"
-            f"📊 Vol:*{format_currency(volume_changes)}* (*{vmr:.2f}% Hype*)\n"
+            f"📊 Vol: {format_currency(total_volume)} ({vmr:.2f}% Hype) {hype_icon}\n"
             f"🔄 Turnover: *{turnover:.2f}*\n"
             f"📈 Volatility: *{volatility:.2f}*\n"
             f"{momentum_emoji} Momentum: *{momentum_days}d* ({momentum_type})\n"
