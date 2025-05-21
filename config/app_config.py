@@ -22,9 +22,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GOOGLE_CREDENTIALS = os.getenv('GOOGLE_CREDENTIALS')
 SHEET_URL_ID = os.getenv("SHEET_URL_ID")
 BOT_MODE = os.getenv("BOT_MODE", "webhook") # Default to webhook
-X_USERNAME = os.getenv("X_USERNAME")
-X_EMAIL = os.getenv("X_EMAIL")
-X_PASSWORD = os.getenv("X_PASSWORD")
+
 
 # Webhook Config for PythonAnywhere
 WEBHOOK_USERNAME = "gafarybyh" 

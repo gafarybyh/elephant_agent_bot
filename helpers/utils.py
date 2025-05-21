@@ -72,7 +72,7 @@ def categorize_market_cap(market_cap):
     else:
         return 'microCap'
 
-def format_market_cap(value):
+def format_currency(value):
     """Memformat nilai market cap menjadi string yang mudah dibaca.
     
     Args:

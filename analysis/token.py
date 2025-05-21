@@ -1,4 +1,4 @@
-from helpers.utils import format_market_cap
+from helpers.utils import format_currency
 from analysis.cap_analysis import detect_early_momentum_v2
 from datetime import datetime
 
@@ -12,6 +12,7 @@ def format_token_summary(token, index=None):
         mcap_change = float(token.get("Market Cap (Change 24h)", 0))
         price_change_24h = float(token.get("Price Changes 24h", 0))
         price_change_7d = float(token.get("Price Changes 7d", 0))
+        volume_changes = float(token.get("Volume Change 24h", 0))
         turnover = float(token.get("Turnover Score", 0))
         
         # Pastikan VMR dikonversi dengan benar
@@ -75,10 +76,10 @@ def format_token_summary(token, index=None):
         return (
             "```\n"
             f"{rank_indicator}*{name}*\n"
-            f"💰 MCAP: {format_market_cap(mcap)} (*{mcap_change:.2f}%*)\n"
+            f"💰 MCAP: {format_currency(mcap)} (*{mcap_change:.2f}%*)\n"
             f"💲 Price 24h: *{price_change_24h:.2f}%* {price_24h_trend}\n"
             f"💲 Price 7d: *{price_change_7d:.2f}%* {price_7d_trend}\n"
-            f"📊 Hype: *{vmr:.2f}%*\n"
+            f"📊 Vol:*{format_currency(volume_changes)}* (*{vmr:.2f}% Hype*)\n"
             f"🔄 Turnover: *{turnover:.2f}*\n"
             f"📈 Volatility: *{volatility:.2f}*\n"
             f"{momentum_emoji} Momentum: *{momentum_days}d* ({momentum_type})\n"
@@ -101,7 +102,7 @@ def format_token_summary(token, index=None):
         except:
             pass
         
-        return error_msg
+        return error_msg 
 
 def format_category_tokens(category_name, limit=15):
     """Format token dengan early momentum untuk kategori tertentu."""
@@ -126,7 +127,7 @@ def format_detailed_analysis(token, index):
         score = token.get("Early Momentum Score", 0)
         
         return (
-            f"*{index+1}. {name}* ({format_market_cap(mcap)}, {category})\n"
+            f"*{index+1}. {name}* ({format_currency(mcap)}, {category})\n"
             f"*Overall Momentum Score:* {score:.2f} ({token.get('Momentum Strength', 'Unknown')})\n\n"
             f"*Component Scores:*\n"
             f"- MCAP Change: {token.get('MCAP Score', 0):.2f}\n"
@@ -135,7 +136,7 @@ def format_detailed_analysis(token, index):
             f"- Price Action: {token.get('Price Score', 0):.2f}\n"
             f"- Volume Change: {token.get('Volume Score', 0):.2f}\n\n"
             f"*Raw Metrics:*\n"
-            f"- Market Cap: {format_market_cap(mcap)}\n"
+            f"- Market Cap: {format_currency(mcap)}\n"
             f"- Market Cap Change 24h: {token.get('Market Cap (Change 24h)', 0):.2f}%\n"
             f"- Volume/MCAP Ratio: {token.get('VMR', 0) * 100:.2f}%\n"
             f"- Volatility: {token.get('Volatility', 0):.2f}%\n\n"
